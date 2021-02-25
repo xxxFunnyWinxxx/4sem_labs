@@ -18,16 +18,25 @@ class CalcMesh:
         self.smth = np.power(self.nodes[0, :], 2) + np.power(self.nodes[1, :], 2)
 
         # Тут может быть скорость, но сейчас здесь нули
-        self.velocity = np.zeros(shape=(3, int(len(nodes_coords) / 3)), dtype=np.double)
+        self.velocity = 5 * np.ones(shape=(3, int(len(nodes_coords) / 3)), dtype=np.double)
+        maxz = max(self.nodes[2])
+        minz = min(self.nodes[2])
+        print(maxz, minz)
+        leng = int(len(nodes_coords) / 3)
+        for i in range(leng):
+            self.velocity[2][i] *= (leng - 1 - i)/leng
 
-        # Пройдём по элементам в модели gmsh
+        self.time = 0
+
+        # Пройдём по элементам в модели gmsh++
         self.tetrs = np.array([tetrs_points[0::4],tetrs_points[1::4],tetrs_points[2::4],tetrs_points[3::4]])
         self.tetrs -= 1
 
     # Метод отвечает за выполнение для всей сетки шага по времени величиной tau
     def move(self, tau):
         # По сути метод просто двигает все точки c их текущими скоростями
-        self.nodes += self.velocity * tau
+        self.time += tau
+        self.nodes[2] += self.velocity[2] * np.sin(self.time * 10)
 
     # Метод отвечает за запись текущего состояния сетки в снапшот в формате VTK
     def snapshot(self, snap_number):
@@ -73,7 +82,7 @@ class CalcMesh:
         # Создаём снапшот в файле с заданным именем
         writer = vtk.vtkXMLUnstructuredGridWriter()
         writer.SetInputDataObject(unstructuredGrid)
-        writer.SetFileName("tetr3d-step-" + str(snap_number) + ".vtu")
+        writer.SetFileName("rabbit-step-" + str(snap_number) + ".vtu")
         writer.Write()
 
 
@@ -85,7 +94,7 @@ gmsh.initialize()
 # Считаем STL
 try:
     path = os.path.dirname(os.path.abspath(__file__))
-    gmsh.merge(os.path.join(path, 'origamix-rabbit-1.stl'))
+    gmsh.merge(os.path.join(path, 'rabbit.stl'))
 except:
     print("Could not load STL mesh: bye!")
     gmsh.finalize()
@@ -141,8 +150,11 @@ for i in range(0, len(nodeTags)):
 assert(len(tetrsNodesTags) % 4 == 0)
 
 # TODO: неплохо бы полноценно данные сетки проверять, да
+tau = 0.1
 
 mesh = CalcMesh(nodesCoord, tetrsNodesTags)
-mesh.snapshot(0)
+for i in range(1, 100):
+    mesh.move(tau)
+    mesh.snapshot(i)
 
 gmsh.finalize()
