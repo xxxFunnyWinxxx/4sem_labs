@@ -1,6 +1,6 @@
-import vtk
 import numpy as np
 import gmsh
+import vtk
 import math
 import os
 
@@ -18,13 +18,12 @@ class CalcMesh:
         self.smth = np.power(self.nodes[0, :], 2) + np.power(self.nodes[1, :], 2)
 
         # Тут может быть скорость, но сейчас здесь нули
-        self.velocity = 5 * np.ones(shape=(3, int(len(nodes_coords) / 3)), dtype=np.double)
-        maxz = max(self.nodes[2])
-        minz = min(self.nodes[2])
-        print(maxz, minz)
-        leng = int(len(nodes_coords) / 3)
-        for i in range(leng):
-            self.velocity[2][i] *= (leng - 1 - i)/leng
+        self.velocity = 5 * np.ones(shape=(3, int(len(nodes_coords) / 3)), dtype=np.double)        
+
+        length = max(self.nodes[2]) - min(self.nodes[2])
+        min_coord = min(self.nodes[2])
+        for i in range(int(len(nodes_coords) / 3)):            
+            self.velocity[2][i] *= (length - self.nodes[2][i] + min_coord)/length
 
         self.time = 0
 
